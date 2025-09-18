@@ -2,11 +2,11 @@
 
 # Build the application
 build:
-	go build -o discord-bot main.go
+	go build -o discord-bot .
 
 # Run the application (requires DISCORD_TOKEN environment variable)
 run:
-	go run main.go
+	go run .
 
 # Run tests
 test:

@@ -74,8 +74,9 @@ func main() {
 }
 
 func ready(s *discordgo.Session, event *discordgo.Ready) {
-	s.UpdateGameStatus(0, "AtCoder contests | !contest")
+	s.UpdateGameStatus(0, fmt.Sprintf("AtCoder contests | %shelp", config.CommandPrefix))
 	log.Printf("Bot is ready! Logged in as: %v#%v", event.User.Username, event.User.Discriminator)
+	log.Printf("Bot is connected to %d guilds", len(event.Guilds))
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -85,10 +86,17 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// Handle commands
-	if strings.HasPrefix(m.Content, config.CommandPrefix+"contest") {
+	content := strings.ToLower(strings.TrimSpace(m.Content))
+	prefix := strings.ToLower(config.CommandPrefix)
+
+	if strings.HasPrefix(content, prefix+"contest") {
 		handleContestCommand(s, m)
-	} else if strings.HasPrefix(m.Content, config.CommandPrefix+"help") {
+	} else if strings.HasPrefix(content, prefix+"help") {
 		handleHelpCommand(s, m)
+	} else if strings.HasPrefix(content, prefix+"next") {
+		handleNextContestCommand(s, m)
+	} else if strings.HasPrefix(content, prefix+"status") {
+		handleStatusCommand(s, m)
 	}
 }
 
@@ -166,6 +174,16 @@ func handleHelpCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 				Inline: false,
 			},
 			{
+				Name:   config.CommandPrefix + "next",
+				Value:  "Show the next upcoming contest",
+				Inline: false,
+			},
+			{
+				Name:   config.CommandPrefix + "status",
+				Value:  "Show bot status and statistics",
+				Inline: false,
+			},
+			{
 				Name:   config.CommandPrefix + "help",
 				Value:  "Show this help message",
 				Inline: false,
@@ -229,6 +247,119 @@ func getUpcomingContests() ([]Contest, error) {
 
 	log.Printf("Found %d upcoming contests", len(upcomingContests))
 	return upcomingContests, nil
+}
+
+func handleNextContestCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	s.ChannelTyping(m.ChannelID)
+
+	log.Printf("Next contest command requested by user %s in channel %s", m.Author.Username, m.ChannelID)
+
+	contests, err := getUpcomingContests()
+	if err != nil {
+		log.Printf("Error fetching contests: %v", err)
+		s.ChannelMessageSend(m.ChannelID, "❌ Error fetching contest information. Please try again later.")
+		return
+	}
+
+	if len(contests) == 0 {
+		s.ChannelMessageSend(m.ChannelID, "📅 No upcoming contests found.")
+		return
+	}
+
+	// Get the next contest (first in sorted list)
+	contest := contests[0]
+	startTime := time.Unix(contest.StartEpochSecond, 0)
+	duration := time.Duration(contest.DurationSecond) * time.Second
+	timeUntil := time.Until(startTime)
+
+	embed := &discordgo.MessageEmbed{
+		Title:       "⏰ Next AtCoder Contest",
+		Description: contest.Title,
+		Color:       0xffa500,
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "📅 Start Time",
+				Value:  startTime.Format("2006-01-02 15:04 MST"),
+				Inline: true,
+			},
+			{
+				Name:   "⏱️ Duration",
+				Value:  formatDuration(duration),
+				Inline: true,
+			},
+			{
+				Name:   "🎯 Rate Change",
+				Value:  contest.RateChange,
+				Inline: true,
+			},
+			{
+				Name:   "⏳ Starts In",
+				Value:  formatDuration(timeUntil),
+				Inline: false,
+			},
+		},
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "Contest ID: " + contest.ID,
+		},
+	}
+
+	s.ChannelMessageSendEmbed(m.ChannelID, embed)
+	log.Printf("Sent next contest information: %s", contest.Title)
+}
+
+func handleStatusCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	s.ChannelTyping(m.ChannelID)
+
+	// Get basic bot statistics
+	guildCount := len(s.State.Guilds)
+
+	// Try to get contest count
+	contestCount := 0
+	contests, err := getUpcomingContests()
+	if err == nil {
+		contestCount = len(contests)
+	}
+
+	embed := &discordgo.MessageEmbed{
+		Title:       "🤖 Bot Status",
+		Description: "Current bot status and statistics",
+		Color:       0x00ff7f,
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "📊 Servers",
+				Value:  fmt.Sprintf("%d", guildCount),
+				Inline: true,
+			},
+			{
+				Name:   "🏆 Upcoming Contests",
+				Value:  fmt.Sprintf("%d", contestCount),
+				Inline: true,
+			},
+			{
+				Name:   "🔧 Command Prefix",
+				Value:  config.CommandPrefix,
+				Inline: true,
+			},
+			{
+				Name: "⚙️ Configuration",
+				Value: fmt.Sprintf("Max contests: %d\nUpdate interval: %s",
+					config.MaxContests, config.UpdateInterval),
+				Inline: false,
+			},
+			{
+				Name:   "🌐 API Endpoint",
+				Value:  config.AtCoderAPIURL,
+				Inline: false,
+			},
+		},
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "Bot uptime since last restart",
+		},
+	}
+
+	s.ChannelMessageSendEmbed(m.ChannelID, embed)
 }
 
 func formatDuration(d time.Duration) string {

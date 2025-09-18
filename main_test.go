@@ -78,20 +78,20 @@ func TestFormatDuration(t *testing.T) {
 func TestLoadConfig(t *testing.T) {
 	// Test default config loading
 	config := LoadConfig()
-	
+
 	// Check defaults
 	if config.AtCoderAPIURL != "https://kenkoooo.com/atcoder/resources/contests.json" {
 		t.Errorf("Expected default AtCoder API URL, got %s", config.AtCoderAPIURL)
 	}
-	
+
 	if config.MaxContests != 5 {
 		t.Errorf("Expected default max contests 5, got %d", config.MaxContests)
 	}
-	
+
 	if config.CommandPrefix != "!" {
 		t.Errorf("Expected default command prefix '!', got %s", config.CommandPrefix)
 	}
-	
+
 	if config.UpdateInterval != 10*time.Minute {
 		t.Errorf("Expected default update interval 10m, got %v", config.UpdateInterval)
 	}
@@ -107,7 +107,7 @@ func TestMinFunction(t *testing.T) {
 		{0, 5, 0},
 		{-1, 3, -1},
 	}
-	
+
 	for _, test := range tests {
 		result := min(test.a, test.b)
 		if result != test.expected {

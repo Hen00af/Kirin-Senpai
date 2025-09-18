@@ -5,15 +5,24 @@ A Discord bot written in Go that fetches and displays upcoming AtCoder contest i
 ## Features
 
 - 🏆 Fetch upcoming AtCoder contests
-- 📅 Display contest start times and durations
+- 📅 Display contest start times and durations  
 - 🎯 Show rate change information
-- 🤖 Simple Discord slash commands
+- ⏰ Show time remaining until contest starts
+- 🤖 Multiple Discord commands for different needs
+- ⚙️ Configurable via environment variables
 - 🐳 Docker support for easy deployment
+- 🔧 Setup script for easy installation
+- 📊 Bot status and statistics
+- 🌐 Configurable API endpoint and command prefix
 
 ## Commands
 
-- `!contest` - Display upcoming AtCoder contests
+- `!contest` - Display upcoming AtCoder contests (configurable number)
+- `!next` - Show the next upcoming contest with detailed information
+- `!status` - Display bot status and statistics
 - `!help` - Show available commands
+
+> Note: The command prefix is configurable via the `COMMAND_PREFIX` environment variable.
 
 ## Setup
 
@@ -35,9 +44,17 @@ A Discord bot written in Go that fetches and displays upcoming AtCoder contest i
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd discord-atcoder-bot
+git clone https://github.com/Hen00af/Kirin-Senpai.git
+cd Kirin-Senpai
 ```
+
+2. Run the setup script (recommended):
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+Or manually:
 
 2. Copy the environment file:
 ```bash
@@ -55,7 +72,7 @@ DISCORD_TOKEN=your_discord_bot_token_here
 go mod tidy
 
 # Run the bot
-go run main.go
+go run main.go config.go
 ```
 
 ### Using Docker

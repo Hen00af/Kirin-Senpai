@@ -1,6 +1,6 @@
 module discord-atcoder-bot
 
-go 1.24.7
+go 1.21
 
 require (
 	github.com/bwmarrin/discordgo v0.29.0 // indirect
